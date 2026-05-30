@@ -2,12 +2,13 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
+import { upsertStreamUser } from "@/lib/stream-user";
 
 export const {
   handlers,
   signIn,
   signOut,
-  auth
+  auth,
 } = NextAuth({
   adapter: PrismaAdapter(prisma),
 
@@ -17,4 +18,14 @@ export const {
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
     }),
   ],
+
+  events: {
+    async signIn({ user }) {
+      await upsertStreamUser({
+        id: user.id!,
+        name: user.name || "User",
+        image: user.image,
+      });
+    },
+  },
 });
